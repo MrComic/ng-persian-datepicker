@@ -1,7 +1,7 @@
 import {
   defaultTheme,
   IActiveDate,
-  IDatepickerTheme
+  IDatepickerTheme,
 } from '../../../projects/ng-persian-datepicker/src/public-api';
 import { darkTheme } from './datepicker-theme/dark.theme';
 import { Component } from '@angular/core';
@@ -10,10 +10,9 @@ import { FormControl } from '@angular/forms';
 @Component({
   selector: 'app-demo',
   templateUrl: './demo.component.html',
-  styleUrls: ['./demo.component.scss']
+  styleUrls: ['./demo.component.scss'],
 })
 export class DemoComponent {
-
   dateValue = new FormControl(new Date().valueOf());
 
   uiIsVisible: boolean = true;
@@ -34,6 +33,14 @@ export class DemoComponent {
     return this._theme;
   }
 
+  public isDateDisabled(date: Date) {
+    console.log(date);
+    if (date.getDay() % 2 == 0) {
+      return true;
+    }
+    return false;
+  }
+
   set theme(value: string) {
     this._theme = value;
 
@@ -50,5 +57,4 @@ export class DemoComponent {
   onSelect(date: IActiveDate) {
     console.log(date);
   }
-
 }

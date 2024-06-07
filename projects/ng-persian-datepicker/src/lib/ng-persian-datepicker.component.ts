@@ -7,7 +7,7 @@ import {
   IDay,
   IMonth,
   IYear,
-  IDatepickerTheme
+  IDatepickerTheme,
 } from './interface';
 import {
   Component,
@@ -18,24 +18,21 @@ import {
   Input,
   OnDestroy,
   OnInit,
-  Output
+  Output,
 } from '@angular/core';
 import {
   FormControl,
   FormControlDirective,
-  FormControlName
+  FormControlName,
 } from '@angular/forms';
 
 @Component({
   selector: 'ng-persian-datepicker',
   templateUrl: './ng-persian-datepicker.component.html',
-  styleUrls: ['./ng-persian-datepicker.component.scss']
+  styleUrls: ['./ng-persian-datepicker.component.scss'],
 })
 export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
-
-  constructor(
-    private elementRef: ElementRef<HTMLElement | null>
-  ) {
+  constructor(private elementRef: ElementRef<HTMLElement | null>) {
     this.setToday();
   }
 
@@ -74,12 +71,12 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   /** @ReactiveForm */
 
-  @ContentChild(FormControlDirective, {static: false})
+  @ContentChild(FormControlDirective, { static: false })
   set _formControlDirective(value: FormControlDirective | undefined) {
     this.setFormControl(value?.control);
   }
 
-  @ContentChild(FormControlName, {static: false})
+  @ContentChild(FormControlName, { static: false })
   set _formControlName(value: FormControlName | undefined) {
     this.setFormControl(value?.control);
   }
@@ -92,6 +89,12 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
   set _calendarIsGregorian(value: boolean) {
     this.weekDays = value ? enWeekDays : faWeekDays;
     this.calendarIsGregorian = value;
+  }
+
+  _isDateDisabled?: (value: Date) => boolean = undefined;
+  @Input('isDateDisabled')
+  set isDateDisabled(value: (date: Date) => boolean) {
+    this._isDateDisabled = value;
   }
 
   // date
@@ -132,7 +135,8 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
   @Input('timeEnable')
   set _timeEnable(value: boolean) {
     this.timeEnable = value;
-    if (!this.timeEnable && this.dateValueDefined()) this.onChangeSelectedDate(true);
+    if (!this.timeEnable && this.dateValueDefined())
+      this.onChangeSelectedDate(true);
     this.setTime();
   }
 
@@ -231,38 +235,41 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     }
 
     this.formControlValueChanges?.unsubscribe();
-    this.formControlValueChanges = this.formControl
-      ?.valueChanges
-      ?.subscribe({
-        next: (value: string | number | null | undefined) => {
-          if ((typeof value === 'string' && !value.trim() || (typeof value === 'number' && Number.isNaN(value)) || value === null || value === undefined)) {
-            this.dateValue = undefined;
-            this.lastEmittedDateValue = undefined;
-            this.selectedDate = undefined;
-            this.setViewDate();
-            return;
-          }
-
-          let valueOf: number | undefined = undefined;
-          try {
-            valueOf = this.valueOfDate(value);
-          } catch (e) {
-            return;
-          }
-
-          if (typeof valueOf === 'undefined' || valueOf === this.dateValue) {
-            return;
-          }
-
-          const date = Jalali.timestamp(valueOf, false);
-          if (!this.isDateInRange(date.valueOf(), false, false)) {
-            return;
-          }
-
-          this.setTime(date);
-          this.changeSelectedDate(date, false);
+    this.formControlValueChanges = this.formControl?.valueChanges?.subscribe({
+      next: (value: string | number | null | undefined) => {
+        if (
+          (typeof value === 'string' && !value.trim()) ||
+          (typeof value === 'number' && Number.isNaN(value)) ||
+          value === null ||
+          value === undefined
+        ) {
+          this.dateValue = undefined;
+          this.lastEmittedDateValue = undefined;
+          this.selectedDate = undefined;
+          this.setViewDate();
+          return;
         }
-      });
+
+        let valueOf: number | undefined = undefined;
+        try {
+          valueOf = this.valueOfDate(value);
+        } catch (e) {
+          return;
+        }
+
+        if (typeof valueOf === 'undefined' || valueOf === this.dateValue) {
+          return;
+        }
+
+        const date = Jalali.timestamp(valueOf, false);
+        if (!this.isDateInRange(date.valueOf(), false, false)) {
+          return;
+        }
+
+        this.setTime(date);
+        this.changeSelectedDate(date, false);
+      },
+    });
   }
 
   setToday(): void {
@@ -312,7 +319,7 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     this.dateOnInit.next({
       shamsi: String(this.selectedDate.format(this.dateFormat)),
       gregorian: String(this.selectedDate.gregorian(this.dateGregorianFormat)),
-      timestamp: Number(this.selectedDate.valueOf())
+      timestamp: Number(this.selectedDate.valueOf()),
     });
   }
 
@@ -329,10 +336,14 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   setViewDate(): void {
     if (!this.dateValueDefined()) {
-      this.viewDate = this.dateMax ? Jalali.timestamp(this.dateMax, false) : this.today.clone();
+      this.viewDate = this.dateMax
+        ? Jalali.timestamp(this.dateMax, false)
+        : this.today.clone();
     } else {
-      this.viewDate = this.dateMax && this.selectedDate!.valueOf() > this.dateMax.valueOf() ?
-        Jalali.timestamp(this.dateMax, false) : this.selectedDate!.clone();
+      this.viewDate =
+        this.dateMax && this.selectedDate!.valueOf() > this.dateMax.valueOf()
+          ? Jalali.timestamp(this.dateMax, false)
+          : this.selectedDate!.clone();
     }
     if (!this.timeEnable) this.viewDate.startOf('day');
     this.onChangeViewDate();
@@ -362,14 +373,14 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
       years.startOf('year');
       years.add(-6, 'year');
     }
-    for (let i = 0 ; i < 12 ; i++) {
+    for (let i = 0; i < 12; i++) {
       const year: number[] = [+years, years.getFullYear()];
       this.years.push({
         timestamp: year[0],
         value: year[1],
         isYearOfTodayDate: this.isYearOfTodayDate(year),
         isYearOfSelectedDate: this.isYearOfSelectedDate(year),
-        isYearDisabled: this.isYearDisabled(year)
+        isYearDisabled: this.isYearDisabled(year),
       });
       if (years instanceof Date) {
         years.setFullYear(years.getFullYear() + 1);
@@ -389,15 +400,19 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     } else {
       months.startOf('year');
     }
-    for (let i = 0 ; i < 12 ; i++) {
-      const month: number[] = [+months, months.getFullYear(), months.getMonth()];
+    for (let i = 0; i < 12; i++) {
+      const month: number[] = [
+        +months,
+        months.getFullYear(),
+        months.getMonth(),
+      ];
       this.months.push({
         timestamp: month[0],
         year: month[1],
         indexValue: month[2],
         isMonthOfTodayDate: this.isMonthOfToday(month),
         isMonthOfSelectedDate: this.isMonthOfSelectedDate(month),
-        isMonthDisabled: this.isMonthDisabled(month)
+        isMonthDisabled: this.isMonthDisabled(month),
       });
       if (months instanceof Date) {
         months.setMonth(months.getMonth() + 1);
@@ -426,44 +441,83 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
       nextMonth.add(1, 'month');
     }
 
-    const gregorianMonthDays = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    const currentMonthDays: number = this.calendarIsGregorian ? gregorianMonthDays(currentMonth.date) : currentMonth.monthLength();
-    const prevMonthDays: number = this.calendarIsGregorian ? gregorianMonthDays(prevMonth.date) : prevMonth.monthLength();
-    const nextMonthDays: number = this.calendarIsGregorian ? gregorianMonthDays(nextMonth.date) : nextMonth.monthLength();
+    const gregorianMonthDays = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const currentMonthDays: number = this.calendarIsGregorian
+      ? gregorianMonthDays(currentMonth.date)
+      : currentMonth.monthLength();
+    const prevMonthDays: number = this.calendarIsGregorian
+      ? gregorianMonthDays(prevMonth.date)
+      : prevMonth.monthLength();
+    const nextMonthDays: number = this.calendarIsGregorian
+      ? gregorianMonthDays(nextMonth.date)
+      : nextMonth.monthLength();
 
-    for (let i = 0 ; i < prevMonthDays ; i++) {
+    for (let i = 0; i < prevMonthDays; i++) {
       if (this.calendarIsGregorian) {
-        prevMonthDetails.push([+prevMonth.date, prevMonth.date.getFullYear(), prevMonth.date.getMonth(), prevMonth.date.getDate()]);
+        prevMonthDetails.push([
+          +prevMonth.date,
+          prevMonth.date.getFullYear(),
+          prevMonth.date.getMonth(),
+          prevMonth.date.getDate(),
+        ]);
       } else {
-        prevMonthDetails.push([+prevMonth, prevMonth.getFullYear(), prevMonth.getMonth(), prevMonth.getDate()]);
+        prevMonthDetails.push([
+          +prevMonth,
+          prevMonth.getFullYear(),
+          prevMonth.getMonth(),
+          prevMonth.getDate(),
+        ]);
       }
       prevMonth.add(1, 'day');
     }
-    for (let i = 0 ; i < currentMonthDays ; i++) {
+    for (let i = 0; i < currentMonthDays; i++) {
       if (this.calendarIsGregorian) {
-        currentMonthDetails.push([+currentMonth, currentMonth.date.getFullYear(), currentMonth.date.getMonth(), currentMonth.date.getDate()]);
+        currentMonthDetails.push([
+          +currentMonth,
+          currentMonth.date.getFullYear(),
+          currentMonth.date.getMonth(),
+          currentMonth.date.getDate(),
+        ]);
       } else {
-        currentMonthDetails.push([+currentMonth, currentMonth.getFullYear(), currentMonth.getMonth(), currentMonth.getDate()]);
+        currentMonthDetails.push([
+          +currentMonth,
+          currentMonth.getFullYear(),
+          currentMonth.getMonth(),
+          currentMonth.getDate(),
+        ]);
       }
       currentMonth.add(1, 'day');
     }
-    for (let i = 0 ; i < nextMonthDays ; i++) {
+    for (let i = 0; i < nextMonthDays; i++) {
       if (this.calendarIsGregorian) {
-        nextMonthDetails.push([+nextMonth, nextMonth.date.getFullYear(), nextMonth.date.getMonth(), nextMonth.date.getDate()]);
+        nextMonthDetails.push([
+          +nextMonth,
+          nextMonth.date.getFullYear(),
+          nextMonth.date.getMonth(),
+          nextMonth.date.getDate(),
+        ]);
       } else {
-        nextMonthDetails.push([+nextMonth, nextMonth.getFullYear(), nextMonth.getMonth(), nextMonth.getDate()]);
+        nextMonthDetails.push([
+          +nextMonth,
+          nextMonth.getFullYear(),
+          nextMonth.getMonth(),
+          nextMonth.getDate(),
+        ]);
       }
       nextMonth.add(1, 'day');
     }
 
-    for (let row = 0; row < 6 ; row++) {
+    for (let row = 0; row < 6; row++) {
       const rowValue: IDay[] = [];
 
-      for (let col = 0; col < 7 ; col++) {
-        const fromPrevMonth: number = this.calendarIsGregorian ?
-          this.viewDate.date.getDay() :
-          (this.viewDate.date.getDay() === 6) ? 0 : (this.viewDate.date.getDay() + 1);
-        let index: number = ((row * 7) + col) - fromPrevMonth;
+      for (let col = 0; col < 7; col++) {
+        const fromPrevMonth: number = this.calendarIsGregorian
+          ? this.viewDate.date.getDay()
+          : this.viewDate.date.getDay() === 6
+          ? 0
+          : this.viewDate.date.getDay() + 1;
+        let index: number = row * 7 + col - fromPrevMonth;
         let day: number[] = [];
 
         if (index < 0) {
@@ -484,7 +538,7 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
           isDayInCurrentMonth: this.isDayInCurrentMonth(day),
           isDayOfTodayDate: this.isDayOfTodayDate(day),
           isDayOfSelectedDate: this.isDayOfSelectedDate(day),
-          isDayDisabled: this.isDayDisabled(day)
+          isDayDisabled: this.isDayDisabled(day),
         });
       }
 
@@ -500,13 +554,18 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     const year: number = date.getFullYear();
     switch (this.viewModes[this.viewModeIndex]) {
       case 'day':
-        this.viewDateTitle = `${this.calendarIsGregorian ? enMonths[date.getMonth()] : faMonths[date.getMonth()]} ${year}`;
+        this.viewDateTitle = `${
+          this.calendarIsGregorian
+            ? enMonths[date.getMonth()]
+            : faMonths[date.getMonth()]
+        } ${year}`;
         break;
       case 'month':
         this.viewDateTitle = year.toString();
         break;
       case 'year':
-        this.viewDateTitle = (year - 6).toString() + '-' + (year + 5).toString();
+        this.viewDateTitle =
+          (year - 6).toString() + '-' + (year + 5).toString();
         break;
     }
   }
@@ -533,12 +592,19 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     }
 
     if (this.dateValueDefined()) {
-      this.formControl?.setValue(Jalali.timestamp(this.dateValue!, false).format(this.dateFormat, this.calendarIsGregorian));
+      this.formControl?.setValue(
+        Jalali.timestamp(this.dateValue!, false).format(
+          this.dateFormat,
+          this.calendarIsGregorian
+        )
+      );
     }
   }
 
   setShowOnInputFocus(): void {
-    const input = this.elementRef.nativeElement?.querySelector('input') as (HTMLInputElement | null);
+    const input = this.elementRef.nativeElement?.querySelector(
+      'input'
+    ) as HTMLInputElement | null;
 
     if (!input) {
       return;
@@ -556,13 +622,15 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   skipViewDate(skip: number, type: number): void {
     if (type === 1) {
-      this.calendarIsGregorian ?
-        this.viewDate.date.setFullYear(this.viewDate.date.getFullYear() + skip) :
-        this.viewDate.add(skip, 'year');
+      this.calendarIsGregorian
+        ? this.viewDate.date.setFullYear(
+            this.viewDate.date.getFullYear() + skip
+          )
+        : this.viewDate.add(skip, 'year');
     } else if (type === 2) {
-      this.calendarIsGregorian ?
-        this.viewDate.date.setMonth(this.viewDate.date.getMonth() + skip) :
-        this.viewDate.add(skip, 'month');
+      this.calendarIsGregorian
+        ? this.viewDate.date.setMonth(this.viewDate.date.getMonth() + skip)
+        : this.viewDate.add(skip, 'month');
     }
   }
 
@@ -579,7 +647,7 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
         this.skipViewDate(skip, 1);
         break;
       case 'year':
-        this.skipViewDate((skip * 12), 1);
+        this.skipViewDate(skip * 12, 1);
         break;
     }
     this.onChangeViewDate();
@@ -590,7 +658,7 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.viewModes.length <= (this.viewModeIndex + 1)) {
+    if (this.viewModes.length <= this.viewModeIndex + 1) {
       this.viewModeIndex = 0;
     } else {
       this.viewModeIndex++;
@@ -636,19 +704,17 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   isYearOfTodayDate(year: number[]): boolean {
     const date = this.calendarIsGregorian ? this.today.date : this.today;
-    return (
-      year[1] === date.getFullYear()
-    );
+    return year[1] === date.getFullYear();
   }
 
   isYearOfSelectedDate(year: number[]): boolean {
     if (!this.selectedDate) {
       return false;
     }
-    const date = this.calendarIsGregorian ? this.selectedDate.date : this.selectedDate;
-    return (
-      year[1] === date.getFullYear()
-    );
+    const date = this.calendarIsGregorian
+      ? this.selectedDate.date
+      : this.selectedDate;
+    return year[1] === date.getFullYear();
   }
 
   isYearDisabled(month: number[]): boolean {
@@ -657,21 +723,17 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   isMonthOfToday(month: number[]): boolean {
     const date = this.calendarIsGregorian ? this.today.date : this.today;
-    return (
-      month[1] === date.getFullYear() &&
-      month[2] === date.getMonth()
-    );
+    return month[1] === date.getFullYear() && month[2] === date.getMonth();
   }
 
   isMonthOfSelectedDate(month: number[]): boolean {
     if (!this.selectedDate) {
       return false;
     }
-    const date = this.calendarIsGregorian ? this.selectedDate.date : this.selectedDate;
-    return (
-      month[1] === date.getFullYear() &&
-      month[2] === date.getMonth()
-    );
+    const date = this.calendarIsGregorian
+      ? this.selectedDate.date
+      : this.selectedDate;
+    return month[1] === date.getFullYear() && month[2] === date.getMonth();
   }
 
   isMonthDisabled(month: number[]): boolean {
@@ -680,10 +742,7 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   isDayInCurrentMonth(day: number[]): boolean {
     const date = this.calendarIsGregorian ? this.viewDate.date : this.viewDate;
-    return (
-      day[1] === date.getFullYear() &&
-      day[2] === date.getMonth()
-    );
+    return day[1] === date.getFullYear() && day[2] === date.getMonth();
   }
 
   isDayOfTodayDate(day: number[]): boolean {
@@ -699,7 +758,9 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     if (!this.selectedDate) {
       return false;
     }
-    const date = this.calendarIsGregorian ? this.selectedDate.date : this.selectedDate;
+    const date = this.calendarIsGregorian
+      ? this.selectedDate.date
+      : this.selectedDate;
     return (
       day[1] === date.getFullYear() &&
       day[2] === date.getMonth() &&
@@ -708,7 +769,9 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
   }
 
   isDayDisabled(day: number[]): boolean {
-    return !this.isDateInRange(day[0], false, false);
+    return this._isDateDisabled
+      ? this._isDateDisabled(new Date(day[1], day[2], day[3]))
+      : !this.isDateInRange(day[0], false, false);
   }
 
   isDateInRange(date: number, isYear: boolean, isMonth: boolean): boolean {
@@ -783,7 +846,7 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     this.dateOnSelect.next({
       shamsi: String(this.selectedDate!.format(this.dateFormat)),
       gregorian: String(this.selectedDate!.gregorian(this.dateGregorianFormat)),
-      timestamp: Number(this.selectedDate!.valueOf())
+      timestamp: Number(this.selectedDate!.valueOf()),
     });
   }
 
@@ -828,7 +891,10 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
   }
 
   toggleAmPm(current: 'AM' | 'PM'): void {
-    if ((current === 'AM' && this.hour < 12) || (current === 'PM' && this.hour >= 12)) {
+    if (
+      (current === 'AM' && this.hour < 12) ||
+      (current === 'PM' && this.hour >= 12)
+    ) {
       return;
     }
     if (this.hour < 12) {
@@ -864,8 +930,12 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
 
   private valueOfDate(date: string | number): number {
     if (typeof date === 'string') {
-      const gregorian: boolean = (this.calendarIsGregorian || (this.dateIsGregorian && !this.dateValueDefined()));
-      return gregorian ? +Jalali.gregorian(date, false) : +Jalali.parse(date, false);
+      const gregorian: boolean =
+        this.calendarIsGregorian ||
+        (this.dateIsGregorian && !this.dateValueDefined());
+      return gregorian
+        ? +Jalali.gregorian(date, false)
+        : +Jalali.parse(date, false);
     }
 
     return date;
@@ -875,5 +945,4 @@ export class NgPersianDatepickerComponent implements OnInit, OnDestroy {
     this.uiIsVisible = value;
     this.uiIsVisibleChange.next(value);
   }
-
 }
